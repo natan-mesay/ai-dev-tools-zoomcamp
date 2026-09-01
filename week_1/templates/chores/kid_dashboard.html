@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ member.name }}'s Quest Board • Chore Kiosk{% endblock %}
+
+{% block content %}
+<div class="flex-1 flex flex-col gap-6">
+
+    <!-- Kid Header Card -->
+    <div class="bg-slate-800/80 border-2 border-amber-400/40 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+        <div class="absolute -top-16 -right-16 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl"></div>
+
+        <div class="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 relative z-10">
+            <div class="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+                <div class="w-24 h-24 rounded-3xl bg-gradient-to-tr from-amber-500/30 to-purple-500/30 border-2 border-amber-400/50 flex items-center justify-center text-5xl shadow-inner">
+                    {{ member.avatar }}
+                </div>
+                <div>
+                    <div class="flex items-center justify-center sm:justify-start gap-2 mb-1">
+                        <h2 class="text-3xl font-black text-white">{{ member.name }}</h2>
+                        <span class="px-3 py-0.5 rounded-full text-xs font-black bg-amber-400 text-slate-950">
+                            ⭐ Level {{ member.level }}
+                        </span>
+                    </div>
+                    <p class="text-slate-400 text-sm font-medium">Ready to conquer today's household quests!</p>
+                </div>
+            </div>
+
+            <!-- Stats Pills -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full sm:w-auto">
+                <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl px-4 py-2.5 text-center">
+                    <span class="text-xs text-slate-400 font-semibold block">Allowance</span>
+                    <span class="text-xl font-black text-emerald-400">💰 ${{ member.allowance_balance }}</span>
+                </div>
+                <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl px-4 py-2.5 text-center">
+                    <span class="text-xs text-slate-400 font-semibold block">Streak</span>
+                    <span class="text-xl font-black text-orange-400">🔥 {{ member.current_streak }} Days</span>
+                </div>
+                <div class="col-span-2 sm:col-span-1 bg-slate-900/80 border border-slate-700/80 rounded-2xl px-4 py-2.5 text-center">
+                    <span class="text-xs text-slate-400 font-semibold block">Total XP</span>
+                    <span class="text-xl font-black text-amber-300">✨ {{ member.xp }} XP</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Level Progress Bar -->
+        <div class="mt-6 pt-4 border-t border-slate-700/60">
+            <div class="flex justify-between text-xs font-bold mb-1.5">
+                <span class="text-slate-300">Progress to Level {{ member.level|add:1 }}</span>
+                <span class="text-amber-400">{{ member.xp }} XP / {{ member.level }}00 XP</span>
+            </div>
+            <div class="w-full h-3.5 bg-slate-900/80 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                <div class="h-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 rounded-full transition-all duration-500"
+                     style="width: {% widthratio member.xp 100 1 %}%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Navigation Back / Kiosk Switcher -->
+    <div class="flex items-center justify-between">
+        <a href="{% url 'chores:kiosk_home' %}" class="touch-btn inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sm font-bold text-slate-300 transition">
+            <span>←</span>
+            <span>Switch Profile</span>
+        </a>
+        <div class="text-xs text-slate-400 font-semibold">
+            <span>Household Kiosk Active</span>
+        </div>
+    </div>
+
+    <!-- Placeholder for Task 4 & 5 (Routines and Bounty Board) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Routines Card -->
+        <div class="bg-slate-800/60 border border-slate-700 rounded-3xl p-6">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="text-2xl">📋</span>
+                <h3 class="text-xl font-bold text-white">Daily Routines</h3>
+            </div>
+            <p class="text-sm text-slate-400 mb-4">Complete your routine tasks to build your daily streak!</p>
+            <div class="p-6 rounded-2xl bg-slate-900/40 border border-dashed border-slate-700 text-center text-slate-400 text-sm">
+                (Task 4: Interactive Routine Checklist will be rendered here)
+            </div>
+        </div>
+
+        <!-- Bounty Board Card -->
+        <div class="bg-slate-800/60 border border-slate-700 rounded-3xl p-6">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="text-2xl">🎯</span>
+                <h3 class="text-xl font-bold text-white">Bounty Board</h3>
+            </div>
+            <p class="text-sm text-slate-400 mb-4">Claim open bonus chores to earn extra cash & XP!</p>
+            <div class="p-6 rounded-2xl bg-slate-900/40 border border-dashed border-slate-700 text-center text-slate-400 text-sm">
+                (Task 4: Claimable Bounty Board will be rendered here)
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

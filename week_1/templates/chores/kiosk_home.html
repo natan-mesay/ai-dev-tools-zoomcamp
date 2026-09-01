@@ -1,0 +1,348 @@
+{% extends 'base.html' %}
+
+{% block title %}Kiosk Home • Who is doing chores?{% endblock %}
+
+{% block content %}
+<div x-data="pinModal()" 
+     @keydown.window="handleGlobalKey($event)"
+     class="flex-1 flex flex-col justify-center py-4">
+
+    <!-- Welcome Hero Section -->
+    <div class="text-center mb-8 sm:mb-12">
+        <span class="inline-block px-4 py-1.5 mb-3 rounded-full text-xs sm:text-sm font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-inner">
+            🌟 Family Kiosk Mode
+        </span>
+        <h2 class="text-3xl sm:text-5xl font-black text-white tracking-tight mb-2">
+            Who is using the Kiosk?
+        </h2>
+        <p class="text-base sm:text-lg text-slate-400 max-w-xl mx-auto">
+            Tap your avatar below to view your daily quest checklist, claim bounties, or manage approvals!
+        </p>
+    </div>
+
+    <!-- Kids Section -->
+    <div class="mb-10">
+        <div class="flex items-center gap-2 mb-4 px-2">
+            <span class="text-xl">🚀</span>
+            <h3 class="text-lg sm:text-xl font-extrabold text-amber-400 uppercase tracking-wider">
+                Kids Quests & Chores
+            </h3>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for kid in kids %}
+            <a href="{% url 'chores:kid_dashboard' kid.id %}" 
+               class="touch-btn group relative bg-slate-800/80 hover:bg-slate-800 border-2 border-slate-700/80 hover:border-amber-400/80 rounded-3xl p-6 shadow-xl hover:shadow-amber-500/10 transition-all duration-200 transform hover:-translate-y-1 active:scale-95 flex flex-col justify-between overflow-hidden">
+                
+                <!-- Background Accent Glow -->
+                <div class="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all duration-300"></div>
+
+                <div>
+                    <!-- Top Avatar & Role Pill -->
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-amber-500/20 via-purple-500/20 to-pink-500/20 border-2 border-amber-400/30 flex items-center justify-center text-4xl sm:text-5xl shadow-inner group-hover:scale-110 transition-transform duration-300">
+                            {{ kid.avatar }}
+                        </div>
+                        <div class="flex flex-col items-end gap-1.5">
+                            <span class="px-3 py-1 rounded-full text-xs font-black bg-amber-400 text-slate-950 shadow-md">
+                                ⭐ Level {{ kid.level }}
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center gap-1">
+                                🔥 {{ kid.current_streak }}d streak
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Kid Name -->
+                    <h4 class="text-2xl font-black text-white group-hover:text-amber-300 transition-colors mb-1">
+                        {{ kid.name }}
+                    </h4>
+
+                    <!-- XP Progress Bar -->
+                    <div class="mb-4">
+                        <div class="flex justify-between text-xs font-semibold mb-1">
+                            <span class="text-slate-400">Level Progress</span>
+                            <span class="text-amber-400">{{ kid.xp }} XP total</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-700/70 rounded-full overflow-hidden p-0.5 border border-slate-600/50">
+                            <div class="h-full bg-gradient-to-r from-amber-400 to-yellow-300 rounded-full transition-all duration-500"
+                                 style="width: {% widthratio kid.xp 100 1 %}%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Footer -->
+                <div class="pt-4 border-t border-slate-700/60 flex items-center justify-between">
+                    <div class="flex items-center gap-1.5 text-emerald-400 font-extrabold text-lg">
+                        <span class="text-xl">💰</span>
+                        <span>${{ kid.allowance_balance }}</span>
+                    </div>
+                    <div class="flex items-center gap-1 text-slate-400 text-xs font-bold group-hover:text-amber-300 group-hover:translate-x-1 transition-all">
+                        <span>Open Dashboard</span>
+                        <span>➔</span>
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+            <div class="col-span-full p-8 rounded-3xl bg-slate-800/40 border border-dashed border-slate-700 text-center text-slate-400">
+                <p class="text-lg">No kid profiles found. Add kids in Django admin or run the seed command.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Parents Section -->
+    <div class="pt-4 border-t border-slate-800/80">
+        <div class="flex items-center justify-between mb-4 px-2">
+            <div class="flex items-center gap-2">
+                <span class="text-xl">🛡️</span>
+                <h3 class="text-lg sm:text-xl font-extrabold text-indigo-400 uppercase tracking-wider">
+                    Parent Approval & Hub
+                </h3>
+            </div>
+            {% if pending_submissions_count > 0 %}
+            <span class="animate-pulse px-3 py-1 rounded-full text-xs font-black bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                {{ pending_submissions_count }} chore{{ pending_submissions_count|pluralize }} waiting for review
+            </span>
+            {% endif %}
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for parent in parents %}
+            <div @click="openModal('{{ parent.id }}', '{{ parent.name|escapejs }}', '{{ parent.avatar }}')"
+                 class="touch-btn group relative bg-slate-800/60 hover:bg-slate-800 border-2 border-indigo-500/30 hover:border-indigo-400 rounded-3xl p-6 shadow-xl hover:shadow-indigo-500/10 transition-all duration-200 transform hover:-translate-y-1 active:scale-95 cursor-pointer flex flex-col justify-between overflow-hidden">
+                
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-3xl sm:text-4xl shadow-inner group-hover:scale-105 transition-transform">
+                        {{ parent.avatar }}
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <h4 class="text-xl font-black text-white group-hover:text-indigo-300 transition-colors">
+                                {{ parent.name }}
+                            </h4>
+                            <span class="text-slate-400 text-sm">🔒</span>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                            Parent Dashboard
+                        </span>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs">
+                    <span class="text-slate-400 flex items-center gap-1 font-medium">
+                        <span>PIN-Protected</span>
+                    </span>
+                    <span class="text-indigo-400 font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                        <span>Tap to Unlock</span>
+                        <span>➔</span>
+                    </span>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full p-6 rounded-3xl bg-slate-800/40 border border-dashed border-slate-700 text-center text-slate-400">
+                <p>No parent profiles found.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Alpine.js PIN Entry Modal -->
+    <div x-cloak 
+         x-show="isOpen" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        
+        <div @click.away="closeModal()" 
+             :class="{ 'animate-shake border-rose-500/80': isError }"
+             class="bg-slate-900 border-2 border-indigo-500/40 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl shadow-indigo-950/80 flex flex-col items-center text-center relative transition-colors duration-200">
+            
+            <!-- Close Button -->
+            <button @click="closeModal()" 
+                    class="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800 transition">
+                ✕
+            </button>
+
+            <!-- Parent Avatar & Name -->
+            <div class="w-20 h-20 rounded-3xl bg-indigo-500/20 border-2 border-indigo-400/40 flex items-center justify-center text-4xl mb-3 shadow-lg">
+                <span x-text="memberAvatar">👩‍👧‍👦</span>
+            </div>
+            <h3 class="text-2xl font-black text-white" x-text="memberName">Parent Name</h3>
+            <p class="text-xs text-indigo-300 font-medium mb-6">Enter 4-digit Parent PIN to unlock</p>
+
+            <!-- PIN Indicator Dots -->
+            <div class="flex items-center justify-center gap-4 mb-6">
+                <template x-for="i in 4" :key="i">
+                    <div class="w-5 h-5 rounded-full border-2 transition-all duration-200 flex items-center justify-center"
+                         :class="pin.length >= i 
+                            ? 'border-indigo-400 bg-indigo-500 shadow-lg shadow-indigo-500/50 scale-110' 
+                            : 'border-slate-600 bg-slate-800/80'">
+                        <span x-show="pin.length >= i" class="text-xs text-white">●</span>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Error Message -->
+            <div x-show="errorMessage" class="mb-4 text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/30 px-3 py-1.5 rounded-xl flex items-center gap-1">
+                <span>⚠️</span>
+                <span x-text="errorMessage"></span>
+            </div>
+
+            <!-- Touch Keypad (3x4 Grid) -->
+            <div class="grid grid-cols-3 gap-3 w-full max-w-[260px] mb-6">
+                <template x-for="n in [1, 2, 3, 4, 5, 6, 7, 8, 9]" :key="n">
+                    <button type="button"
+                            @click="appendDigit(n)"
+                            class="touch-btn h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 border border-slate-700 hover:border-indigo-500 text-2xl font-black text-white shadow-md active:scale-90 transition duration-150 flex items-center justify-center select-none">
+                        <span x-text="n"></span>
+                    </button>
+                </template>
+                
+                <!-- Clear Button -->
+                <button type="button"
+                        @click="clearPin()"
+                        class="touch-btn h-14 rounded-2xl bg-slate-800/50 hover:bg-rose-900/40 active:bg-rose-600 border border-slate-700/60 text-xs font-black text-slate-400 hover:text-rose-300 shadow-md active:scale-90 transition duration-150 flex items-center justify-center select-none">
+                    CLEAR
+                </button>
+
+                <!-- Zero Button -->
+                <button type="button"
+                        @click="appendDigit(0)"
+                        class="touch-btn h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 border border-slate-700 hover:border-indigo-500 text-2xl font-black text-white shadow-md active:scale-90 transition duration-150 flex items-center justify-center select-none">
+                    0
+                </button>
+
+                <!-- Backspace Button -->
+                <button type="button"
+                        @click="deleteDigit()"
+                        class="touch-btn h-14 rounded-2xl bg-slate-800/50 hover:bg-slate-700 active:bg-indigo-600 border border-slate-700/60 text-lg font-black text-slate-300 shadow-md active:scale-90 transition duration-150 flex items-center justify-center select-none">
+                    ⌫
+                </button>
+            </div>
+
+            <!-- Cancel Button -->
+            <button type="button"
+                    @click="closeModal()"
+                    class="touch-btn w-full py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white text-xs font-bold transition">
+                Cancel & Return
+            </button>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function pinModal() {
+    return {
+        isOpen: false,
+        memberId: null,
+        memberName: '',
+        memberAvatar: '',
+        pin: '',
+        errorMessage: '',
+        isError: false,
+        isSubmitting: false,
+
+        openModal(id, name, avatar) {
+            this.memberId = id;
+            this.memberName = name;
+            this.memberAvatar = avatar;
+            this.pin = '';
+            this.errorMessage = '';
+            this.isError = false;
+            this.isOpen = true;
+        },
+
+        closeModal() {
+            this.isOpen = false;
+            this.pin = '';
+            this.errorMessage = '';
+            this.isError = false;
+        },
+
+        appendDigit(digit) {
+            if (this.pin.length < 4) {
+                this.pin += digit.toString();
+                this.errorMessage = '';
+                if (this.pin.length === 4) {
+                    this.verifyPin();
+                }
+            }
+        },
+
+        deleteDigit() {
+            if (this.pin.length > 0) {
+                this.pin = this.pin.slice(0, -1);
+                this.errorMessage = '';
+            }
+        },
+
+        clearPin() {
+            this.pin = '';
+            this.errorMessage = '';
+        },
+
+        handleGlobalKey(event) {
+            if (!this.isOpen) return;
+
+            if (event.key >= '0' && event.key <= '9') {
+                this.appendDigit(event.key);
+            } else if (event.key === 'Backspace') {
+                this.deleteDigit();
+            } else if (event.key === 'Escape') {
+                this.closeModal();
+            }
+        },
+
+        async verifyPin() {
+            if (this.isSubmitting) return;
+            this.isSubmitting = true;
+
+            try {
+                const response = await fetch(`/member/${this.memberId}/verify-pin/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('body').getAttribute('hx-headers') 
+                            ? JSON.parse(document.querySelector('body').getAttribute('hx-headers'))['X-CSRFToken'] 
+                            : ''
+                    },
+                    body: JSON.stringify({ pin: this.pin })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Redirect to parent dashboard
+                    window.location.href = data.redirect_url;
+                } else {
+                    // PIN mismatch or error
+                    this.triggerError(data.message || 'Incorrect PIN. Please try again.');
+                }
+            } catch (err) {
+                this.triggerError('Verification failed. Please try again.');
+            } finally {
+                this.isSubmitting = false;
+            }
+        },
+
+        triggerError(msg) {
+            this.isError = true;
+            this.errorMessage = msg;
+            this.pin = '';
+            setTimeout(() => {
+                this.isError = false;
+            }, 600);
+        }
+    };
+}
+</script>
+{% endblock %}
