@@ -67,3 +67,12 @@ flowchart TD
 ### Phase 5: Verification & Automated Testing
 - [x] Write automated integration tests for all API endpoints and status transition edge cases (`backend/tests/test_api.py`).
 - [x] Run end-to-end smoke test (Add Party $\rightarrow$ Watch Guest Status $\rightarrow$ Notify $\rightarrow$ Seat $\rightarrow$ Verify Table Occupancy).
+
+### Phase 6: Interactive Dining Floor & Drag-and-Drop Seating
+- [x] Redesign Host Dashboard layout: Dining Floor Plan on Left/Center (Square Tables), Queue List on Right.
+- [x] Design visual Square Table cards with top availability badge ('AVAILABLE' / 'OCCUPIED' / 'RESERVED'), capacity indicators, and occupant details.
+- [x] Implement HTML5 Drag-and-Drop: Draggable party cards in QueueList $\rightarrow$ Drop target on available Square Tables in TablesGrid.
+- [x] Add drag hover glow, drop target validation, capacity check, and instant seating transition.
+- [x] Maintain full responsive support and click-to-seat modal fallback.
+
+

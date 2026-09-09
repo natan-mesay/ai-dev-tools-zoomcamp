@@ -98,6 +98,23 @@ export const HostDashboard: React.FC = () => {
     loadData();
   };
 
+  const handleDropPartyOnTable = async (partyId: string, tableId: string) => {
+    const targetParty = waitlist.find((p) => p.id === partyId);
+    const targetTable = tables.find((t) => t.id === tableId);
+
+    if (!targetParty || !targetTable) return;
+
+    if (targetParty.party_size > targetTable.capacity) {
+      showToast(
+        'warning',
+        'Capacity Alert',
+        `${targetParty.guest_name} has ${targetParty.party_size} guests for a ${targetTable.capacity}-seat table.`
+      );
+    }
+
+    await handleSeatParty(partyId, tableId);
+  };
+
   const handleEditParty = async (id: string, dto: UpdateWaitlistDTO) => {
     await api.waitlist.edit(id, dto);
     showToast('info', 'Updated', 'Party details saved.');
@@ -141,7 +158,7 @@ export const HostDashboard: React.FC = () => {
             {restaurant?.name || 'MaitreQ Host Stand'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Front-of-House Waitlist & Table Operations Dashboard
+            Front-of-House Dining Floor & Live Waitlist Management
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -155,10 +172,20 @@ export const HostDashboard: React.FC = () => {
       {/* KPI Cards */}
       <MetricCards stats={stats} />
 
-      {/* Main Content Split: Left (Queue Management 65%) | Right (Tables Floor 35%) */}
+      {/* Main Content Split: Left (Dining Floor & Square Tables) | Right (Queue Management) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left: Queue Management */}
-        <div className="lg:col-span-8">
+        {/* Left: Dining Floor Plan with Visual Square Tables */}
+        <div className="lg:col-span-7 xl:col-span-8 order-2 lg:order-1">
+          <TablesGrid
+            tables={tables}
+            onAddTableClick={() => setIsAddTableOpen(true)}
+            onUpdateTableStatus={handleUpdateTableStatus}
+            onDropParty={handleDropPartyOnTable}
+          />
+        </div>
+
+        {/* Right: Queue Management with Draggable Cards */}
+        <div className="lg:col-span-5 xl:col-span-4 order-1 lg:order-2">
           <QueueList
             entries={waitlist}
             onAddPartyClick={() => setIsAddPartyOpen(true)}
@@ -169,15 +196,6 @@ export const HostDashboard: React.FC = () => {
             onNoShowParty={handleNoShowParty}
             onOpenGuestLink={(party) => setGuestLinkTarget(party)}
             onReorder={handleReorder}
-          />
-        </div>
-
-        {/* Right: Table Management */}
-        <div className="lg:col-span-4">
-          <TablesGrid
-            tables={tables}
-            onAddTableClick={() => setIsAddTableOpen(true)}
-            onUpdateTableStatus={handleUpdateTableStatus}
           />
         </div>
       </div>
@@ -219,3 +237,4 @@ export const HostDashboard: React.FC = () => {
     </div>
   );
 };
+
