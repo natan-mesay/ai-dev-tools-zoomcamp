@@ -40,13 +40,14 @@
 ```
 
 ### 3.1. Host / Front-of-House Staff
-1. **Queue Oversight:** View live list of waiting, notified, and seated parties sorted by arrival time and active position.
-2. **Add Party:** Enter guest name, phone number, party size, and special requirements (e.g., high chair, outdoor seating, quiet booth).
-3. **Status Transitions & State Machine:**
+1. **Interactive Dining Floor Plan:** Visual square tables displaying real-time availability status badges on top, seat capacity, table number, and current seated guest details.
+2. **Queue Oversight & Drag-and-Drop Seating:** View live waiting list on the right panel. Drag any waiting party card directly onto an available square table to instantly assign and seat them.
+3. **Add Party:** Enter guest name, phone number, party size, and special requirements (e.g., high chair, outdoor seating, quiet booth).
+4. **Status Transitions & State Machine:**
    - `WAITING` $\rightarrow$ `NOTIFIED` (table ready alert triggered, sets `notified_at`)
-   - `NOTIFIED` or `WAITING` $\rightarrow$ `SEATED` (party seated, assigns table, marks table `OCCUPIED`, sets `seated_at`)
+   - `NOTIFIED` or `WAITING` $\rightarrow$ `SEATED` (party seated via drag-and-drop or modal, assigns table, marks table `OCCUPIED`, sets `seated_at`)
    - `WAITING` / `NOTIFIED` $\rightarrow$ `CANCELLED` or `NO_SHOW` (clears position)
-4. **Table Assignment:** Associate party with specific table numbers and manage table occupancy status (`AVAILABLE`, `OCCUPIED`, `RESERVED`).
+5. **Table Management:** Manage table occupancy status (`AVAILABLE`, `OCCUPIED`, `RESERVED`), create new tables, and 1-click free/clean tables.
 
 ### 3.2. Guest (Public View)
 1. **Waitlist Tracking:** Access a mobile-optimized status page via a secure, unguessable token link (`/status/:token`).
@@ -63,15 +64,22 @@
 - **FR-03:** Support one-click status transitions (`WAITING`, `NOTIFIED`, `SEATED`, `CANCELLED`, `NO_SHOW`).
 - **FR-04:** Allow editing party details and manual queue reordering.
 
-### 4.2. Guest Status Portal
-- **FR-05:** Unique public URL generated per waitlist entry (`/status/<public_token>`).
-- **FR-06:** Live status updates reflected immediately without requiring manual browser refresh.
-- **FR-07:** Clear visual indicators for when table is ready, with instructions to proceed to the host stand.
+### 4.2. Visual Dining Floor & Drag-and-Drop Seating
+- **FR-05:** Visual square table cards with top availability badge (`AVAILABLE` in green, `OCCUPIED` in purple, `RESERVED` in sky-blue), seat capacity badges/dots, and table numbers.
+- **FR-06:** HTML5 Drag-and-Drop: hosts can drag waiting party cards from the right-hand queue and drop them onto available square tables to execute atomic seating.
+- **FR-07:** Visual drop target feedback (emerald glowing pulse on valid hover) and capacity mismatch warnings.
+- **FR-08:** Quick table status actions (1-click `Free Table` for occupied tables, `Occupy` and `Reserve` shortcuts for free tables).
 
-### 4.3. Table & Capacity Management
-- **FR-08:** Pre-configured list of tables with capacity and current state (`AVAILABLE`, `OCCUPIED`, `RESERVED`).
-- **FR-09:** Quick assignment of an available table when marking a party as `SEATED` (updates table occupancy atomically).
-- **FR-10:** Ability to add new tables and free occupied tables.
+### 4.3. Guest Status Portal
+- **FR-09:** Unique public URL generated per waitlist entry (`/status/<public_token>`).
+- **FR-10:** Live status updates reflected immediately without requiring manual browser refresh.
+- **FR-11:** Clear visual indicators for when table is ready, with instructions to proceed to the host stand.
+
+### 4.4. Table & Capacity Management
+- **FR-12:** Pre-configured list of tables with capacity and current state (`AVAILABLE`, `OCCUPIED`, `RESERVED`).
+- **FR-13:** Quick assignment of an available table when marking a party as `SEATED` (updates table occupancy atomically).
+- **FR-14:** Ability to add new tables and free occupied tables.
+
 
 ---
 

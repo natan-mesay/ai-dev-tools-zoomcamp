@@ -5,17 +5,29 @@
 ---
 
 ## 🌟 Key Features
-
+ 
 - **Host Dashboard:**
-  - Fast walk-in party registration (Name, Party Size, Phone, Special Notes).
-  - Live queue view sorted by arrival time and current wait duration.
-  - One-click status management (`Waiting`, `Notified`, `Seated`, `Cancelled`, `No-Show`).
-  - Table capacity overview and fast table seating.
+  - **Visual Dining Floor Plan:** Square restaurant tables with top availability badges (`Available`, `Occupied`, `Reserved`), seat capacity indicators, and occupant details.
+  - **Drag-and-Drop Seating:** Drag waiting parties directly from the queue onto available tables to instantly seat guests and occupy tables.
+  - **Live Waitlist Queue:** Real-time waiting list on the right panel with status badges, waiting timers, reordering, and instant notifications.
+  - **Fast Party Registration:** Name, party size, phone, and special dining notes.
+  - **Table Operations:** 1-click table clean/freeing, instant reservation locking, and table creation.
 - **Guest Status Portal:**
-  - Mobile-optimized tracking page accessible via unique token link.
-  - Live queue position and estimated wait time.
-  - Instant visual notification when the table is ready.
-  - Self-service cancellation option.
+  - Mobile-optimized tracking page accessible via unique public token links (`/status/:token`).
+  - Real-time queue position and estimated wait time without page reloads.
+  - Prominent "Table Ready" alert state with call-to-action.
+  - Self-service cancellation flow.
+- **Real-Time Synchronization:**
+  - Server-Sent Events (SSE) broadcasting queue and table state changes across all connected devices in real time.
+
+---
+
+## 🛠️ Technology Stack
+
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, Lucide Icons, Canvas Confetti.
+- **Backend:** FastAPI (Python 3.13), Pydantic v2, Uvicorn, Server-Sent Events (SSE).
+- **Database & ORM:** SQLAlchemy 2.0 (Async with SQLite / `aiosqlite`), timezone-aware UTC types, atomic seating transactions.
+- **Testing:** Automated test suite using `pytest` and `pytest-asyncio`.
 
 ---
 
@@ -24,31 +36,31 @@
 - **[Specification Doc](file:///_docs/specs.md):** Complete functional requirements, non-functional requirements, data models, and API endpoints.
 - **[Implementation Plan](file:///plan.md):** Milestone breakdown, task checklist, and architectural guidelines.
 - **[AI Agent Guidelines](file:///AGENTS.md):** Architecture conventions, coding standards, and operational guidelines for autonomous agents.
+- **[OpenAPI Contract](file:///openapi.yaml):** REST API endpoints and schema specifications.
 
 ---
 
 ## 🚀 Getting Started (Development)
 
-### Prerequisites
-- Node.js (v18+) or Python (v3.10+) depending on chosen backend layer
-- Docker & Docker Compose (for PostgreSQL database)
-
-### Quickstart Setup
+### 1. Backend Setup & Run
 ```bash
-# 1. Clone & enter repository
-cd week_2
+cd backend
 
-# 2. Start PostgreSQL via Docker Compose
-docker compose up -d
+# Run automated tests
+uv run pytest
 
-# 3. Install dependencies
+# Start the FastAPI server (http://localhost:8000)
+uv run uvicorn app.main:app --reload --port 8000
+```
+
+### 2. Frontend Setup & Run
+```bash
+cd frontent
+
+# Install dependencies (if needed)
 npm install
 
-# 4. Run database migrations and seed data
-npm run db:migrate
-npm run db:seed
-
-# 5. Start the development server
+# Start Vite dev server (http://localhost:5173)
 npm run dev
 ```
 
@@ -60,7 +72,20 @@ npm run dev
 ├── _docs/
 │   └── specs.md          # Functional and technical specifications
 ├── AGENTS.md             # AI Agent instructions & conventions
-├── plan.md               # Step-by-step implementation plan
-├── .gitignore            # Git ignore rules
+├── plan.md               # Step-by-step implementation plan & checklist
+├── openapi.yaml          # OpenAPI 3.1.0 specification
+├── backend/              # FastAPI + SQLAlchemy async backend
+│   ├── app/
+│   │   ├── db/           # SQLAlchemy models, session, seed data
+│   │   ├── routers/      # REST API route handlers
+│   │   ├── services/     # Business logic layer
+│   │   ├── events.py     # SSE event broadcaster
+│   │   └── main.py       # FastAPI application entrypoint
+│   └── tests/            # Pytest automated test suite
+├── frontent/             # React 19 + Tailwind CSS frontend
+│   └── src/
+│       ├── components/   # Host dashboard & Guest portal components
+│       └── services/     # API & SSE client layer
 └── README.md             # Project overview & documentation
 ```
+
