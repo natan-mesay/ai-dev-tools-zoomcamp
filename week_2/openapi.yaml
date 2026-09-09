@@ -1,0 +1,580 @@
+openapi: 3.1.0
+info:
+  title: MaitreQ API
+  description: Restaurant Waitlist Manager MVP Backend API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000
+    description: Local Development Server
+
+paths:
+  /api/v1/restaurant:
+    get:
+      summary: Get restaurant profile
+      operationId: getRestaurant
+      tags:
+        - Restaurant
+      responses:
+        '200':
+          description: Restaurant profile information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Restaurant'
+
+  /api/v1/waitlist:
+    get:
+      summary: List waitlist entries
+      operationId: listWaitlist
+      tags:
+        - Waitlist
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ACTIVE, WAITING, NOTIFIED, SEATED, ALL]
+            default: ACTIVE
+          description: Filter by status
+      responses:
+        '200':
+          description: List of waitlist entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WaitlistEntry'
+
+    post:
+      summary: Add new party to waitlist
+      operationId: createWaitlistEntry
+      tags:
+        - Waitlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWaitlistDTO'
+      responses:
+        '201':
+          description: Party created and added to waitlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WaitlistEntry'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/waitlist/{id}:
+    patch:
+      summary: Edit party details
+      operationId: editWaitlistEntry
+      tags:
+        - Waitlist
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWaitlistDTO'
+      responses:
+        '200':
+          description: Updated party details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WaitlistEntry'
+        '404':
+          description: Waitlist entry not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/waitlist/{id}/status:
+    patch:
+      summary: Update party status
+      operationId: updateWaitlistStatus
+      tags:
+        - Waitlist
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStatusDTO'
+      responses:
+        '200':
+          description: Party status successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WaitlistEntry'
+        '400':
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Waitlist entry not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/waitlist/reorder:
+    post:
+      summary: Reorder active queue
+      operationId: reorderQueue
+      tags:
+        - Waitlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderQueueDTO'
+      responses:
+        '200':
+          description: Reordered active waitlist
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WaitlistEntry'
+
+  /api/v1/tables:
+    get:
+      summary: List all tables
+      operationId: listTables
+      tags:
+        - Tables
+      responses:
+        '200':
+          description: List of dining tables
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Table'
+
+    post:
+      summary: Create new dining table
+      operationId: createTable
+      tags:
+        - Tables
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTableDTO'
+      responses:
+        '201':
+          description: Table created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Table'
+        '400':
+          description: Invalid table data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/tables/{id}/status:
+    patch:
+      summary: Update table occupancy status
+      operationId: updateTableStatus
+      tags:
+        - Tables
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTableStatusDTO'
+      responses:
+        '200':
+          description: Updated table
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Table'
+        '404':
+          description: Table not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/status/{token}:
+    get:
+      summary: Get guest status by public token
+      operationId: getGuestStatus
+      tags:
+        - Guest Portal
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Public guest status information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuestStatusResponse'
+        '404':
+          description: Guest token not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/status/{token}/cancel:
+    post:
+      summary: Cancel guest waitlist spot
+      operationId: cancelGuestStatus
+      tags:
+        - Guest Portal
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cancelled guest status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuestStatusResponse'
+        '404':
+          description: Guest token not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/stats:
+    get:
+      summary: Get dashboard KPIs & statistics
+      operationId: getDashboardStats
+      tags:
+        - Dashboard
+      responses:
+        '200':
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStats'
+
+  /api/v1/demo/reset:
+    post:
+      summary: Reset database to seed data
+      operationId: resetDemo
+      tags:
+        - Demo
+      responses:
+        '200':
+          description: Reset confirmation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /api/v1/events:
+    get:
+      summary: Real-time Server-Sent Events stream
+      operationId: streamEvents
+      tags:
+        - Realtime
+      responses:
+        '200':
+          description: SSE stream of waitlist and table updates
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+components:
+  schemas:
+    WaitlistStatus:
+      type: string
+      enum: [WAITING, NOTIFIED, SEATED, CANCELLED, NO_SHOW]
+
+    TableStatus:
+      type: string
+      enum: [AVAILABLE, OCCUPIED, RESERVED]
+
+    Restaurant:
+      type: object
+      required: [id, name, slug, phone, created_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    Table:
+      type: object
+      required: [id, restaurant_id, table_number, capacity, status, updated_at]
+      properties:
+        id:
+          type: string
+        restaurant_id:
+          type: string
+        table_number:
+          type: string
+        capacity:
+          type: integer
+          minimum: 1
+        status:
+          $ref: '#/components/schemas/TableStatus'
+        current_party_id:
+          type: string
+          nullable: true
+        current_guest_name:
+          type: string
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+
+    WaitlistEntry:
+      type: object
+      required: [id, restaurant_id, guest_name, phone_number, party_size, status, public_token, position, estimated_wait_minutes, created_at]
+      properties:
+        id:
+          type: string
+        restaurant_id:
+          type: string
+        table_id:
+          type: string
+          nullable: true
+        guest_name:
+          type: string
+        phone_number:
+          type: string
+        party_size:
+          type: integer
+          minimum: 1
+        notes:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/WaitlistStatus'
+        public_token:
+          type: string
+        position:
+          type: integer
+          minimum: 0
+        estimated_wait_minutes:
+          type: integer
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+        notified_at:
+          type: string
+          format: date-time
+          nullable: true
+        seated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    GuestStatusResponse:
+      type: object
+      required: [id, guest_name, phone_number, party_size, status, position, estimated_wait_minutes, created_at, restaurant_name, restaurant_phone]
+      properties:
+        id:
+          type: string
+        guest_name:
+          type: string
+        phone_number:
+          type: string
+        party_size:
+          type: integer
+        status:
+          $ref: '#/components/schemas/WaitlistStatus'
+        position:
+          type: integer
+        estimated_wait_minutes:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        notified_at:
+          type: string
+          format: date-time
+          nullable: true
+        seated_at:
+          type: string
+          format: date-time
+          nullable: true
+        restaurant_name:
+          type: string
+        restaurant_phone:
+          type: string
+        assigned_table_number:
+          type: string
+          nullable: true
+
+    CreateWaitlistDTO:
+      type: object
+      required: [guest_name, phone_number, party_size]
+      properties:
+        guest_name:
+          type: string
+          minLength: 1
+        phone_number:
+          type: string
+          minLength: 1
+        party_size:
+          type: integer
+          minimum: 1
+        notes:
+          type: string
+        estimated_wait_minutes:
+          type: integer
+          minimum: 0
+
+    UpdateWaitlistDTO:
+      type: object
+      properties:
+        guest_name:
+          type: string
+        phone_number:
+          type: string
+        party_size:
+          type: integer
+          minimum: 1
+        notes:
+          type: string
+        estimated_wait_minutes:
+          type: integer
+          minimum: 0
+
+    UpdateStatusDTO:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/WaitlistStatus'
+        table_id:
+          type: string
+
+    ReorderQueueDTO:
+      type: object
+      required: [from_index, to_index]
+      properties:
+        from_index:
+          type: integer
+          minimum: 0
+        to_index:
+          type: integer
+          minimum: 0
+
+    CreateTableDTO:
+      type: object
+      required: [table_number, capacity]
+      properties:
+        table_number:
+          type: string
+          minLength: 1
+        capacity:
+          type: integer
+          minimum: 1
+        status:
+          $ref: '#/components/schemas/TableStatus'
+          default: AVAILABLE
+
+    UpdateTableStatusDTO:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/TableStatus'
+        free_party:
+          type: boolean
+          default: false
+
+    DashboardStats:
+      type: object
+      required: [total_waiting, total_notified, total_seated_today, avg_wait_minutes, available_tables, total_tables]
+      properties:
+        total_waiting:
+          type: integer
+        total_notified:
+          type: integer
+        total_seated_today:
+          type: integer
+        avg_wait_minutes:
+          type: integer
+        available_tables:
+          type: integer
+        total_tables:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      required: [error, code]
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+          nullable: true

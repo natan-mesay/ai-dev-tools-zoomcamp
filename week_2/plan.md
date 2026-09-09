@@ -6,11 +6,11 @@ This document outlines the phased implementation plan, milestones, architectural
 
 ## 1. Architecture & Technology Stack Overview
 
-- **Frontend:** Next.js (App Router) / React, Tailwind CSS, Lucide Icons, Shadcn UI / Radix primitives.
-- **Backend:** Next.js Route Handlers / Fastify API service with WebSockets / SSE for live subscriptions.
-- **Database & ORM:** PostgreSQL with Prisma ORM / Drizzle ORM.
-- **State Management & Data Fetching:** TanStack React Query / Zustand.
-- **Deployment / Containerization:** Docker, Docker Compose for local development.
+- **Frontend:** React 19, Vite, TypeScript, Tailwind CSS, Lucide Icons, Canvas Confetti.
+- **Backend API:** Node.js + Express / Fastify / TypeScript (or Python FastAPI) with REST endpoints and SSE (Server-Sent Events) for real-time pub/sub.
+- **Database & ORM:** PostgreSQL / SQLite with Prisma ORM / Drizzle for schema migration, typed queries, and relational data integrity.
+- **Data Validation:** Zod schema validation on all request bodies and route parameters.
+- **Testing:** Automated API endpoint tests using Vitest / Jest / Supertest.
 
 ---
 
@@ -18,61 +18,52 @@ This document outlines the phased implementation plan, milestones, architectural
 
 ```mermaid
 flowchart TD
-    M1[Phase 1: Project Setup & Data Modeling] --> M2[Phase 2: Backend API & Realtime Layer]
-    M2 --> M3[Phase 3: Host Dashboard UI]
-    M3 --> M4[Phase 4: Guest Mobile Status Page]
-    M4 --> M5[Phase 5: Real-time Synchronization & Notifications]
-    M5 --> M6[Phase 6: Testing, Polish & Deployment]
+    M1[Phase 1: Project Setup & Database Schema] --> M2[Phase 2: Backend REST API & State Logic]
+    M2 --> M3[Phase 3: Real-Time SSE Layer]
+    M3 --> M4[Phase 4: Frontend API Integration]
+    M4 --> M5[Phase 5: Verification & End-to-End Testing]
 ```
 
 ---
 
 ## 3. Detailed Phase Breakdown
 
-### Phase 1: Project Initialization & Data Layer
-- [ ] Initialize repository structure (monorepo or frontend/backend layout).
-- [ ] Setup Docker Compose for local PostgreSQL database.
-- [ ] Configure ORM (Prisma/Drizzle) schema with `Restaurant`, `Table`, and `WaitlistEntry` models.
-- [ ] Write seed script with demo tables and initial waitlist entries.
-- [ ] Implement database migrations and automated health checks.
+### Phase 1: Backend Scaffolding & Database Setup
+- [x] Create standardized [`openapi.yaml`](file:///openapi.yaml) specification.
+- [x] Initialize `backend/` project structure using `uv` with FastAPI, Pydantic, and CORS configuration.
+- [x] Configure Mock Database in `app/database.py` with seed tables and waitlist parties matching the dataset.
+- [x] Implement TDD test suite in `tests/test_api.py`.
 
 ### Phase 2: Core REST API & Business Logic
-- [ ] **Waitlist CRUD:**
-  - `POST /api/v1/waitlist` (Add party, auto-calculate queue position and public token).
-  - `GET /api/v1/waitlist` (Fetch active waiting/notified queue).
-  - `PATCH /api/v1/waitlist/:id` (Edit party name, size, notes).
-  - `PATCH /api/v1/waitlist/:id/status` (Transition status: `WAITING` $\rightarrow$ `NOTIFIED` $\rightarrow$ `SEATED` / `CANCELLED` / `NO_SHOW`).
-- [ ] **Table Management API:**
-  - `GET /api/v1/tables` (List tables, capacity, and current occupancy).
-  - `POST /api/v1/tables` (Add table).
-  - `PATCH /api/v1/tables/:id/status` (Update table status).
-- [ ] **Guest Public API:**
-  - `GET /api/v1/status/:token` (Public read-only status and queue position).
+- [x] **Data Validation:** Pydantic models in `app/schemas.py` for all request payloads (`CreateWaitlistDTO`, `UpdateWaitlistDTO`, `UpdateStatusDTO`, `CreateTableDTO`, `ReorderQueueDTO`).
+- [x] **Waitlist Handlers:**
+  - `GET /api/v1/waitlist` (Fetch active and filtered queue).
+  - `POST /api/v1/waitlist` (Add party, generate token, calculate dynamic position and wait estimate).
+  - `PATCH /api/v1/waitlist/:id` (Edit party metadata).
+  - `PATCH /api/v1/waitlist/:id/status` (State machine transitions: `WAITING` $\rightarrow$ `NOTIFIED` $\rightarrow$ `SEATED` / `CANCELLED` / `NO_SHOW`, atomic table updates).
+  - `POST /api/v1/waitlist/reorder` (Reorder active queue positions).
+- [x] **Table Handlers:**
+  - `GET /api/v1/tables` (List tables, capacity, and occupancy).
+  - `POST /api/v1/tables` (Create new table).
+  - `PATCH /api/v1/tables/:id/status` (Update table status and free occupied parties).
+- [x] **Guest Public Handlers:**
+  - `GET /api/v1/status/:token` (Public tokenized guest status).
   - `POST /api/v1/status/:token/cancel` (Guest self-cancellation).
+- [x] **Stats & Demo Handlers:**
+  - `GET /api/v1/stats` (Calculate live dashboard metrics).
+  - `POST /api/v1/demo/reset` (Reset database to initial seed data).
 
-### Phase 3: Host Dashboard (Staff UI)
-- [ ] Design and implement the Host Header with summary metrics (Total Waiting, Avg Wait Time, Available Tables).
-- [ ] Implement the "Add Party" modal/form with validation.
-- [ ] Build the Live Queue table/kanban view with:
-  - Party size badges
-  - Wait duration counter / timer
-  - Action buttons: "Notify Table Ready", "Seat", "Cancel", "Edit"
-- [ ] Build the Tables Overview sidebar/grid to view table availability and perform quick table assignments.
+### Phase 3: Real-Time Server-Sent Events (SSE) Layer
+- [x] Implement SSE endpoint `GET /api/v1/events` with in-memory event broadcaster in `app/events.py`.
+- [x] Broadcast events on all mutations (`waitlist:created`, `waitlist:updated`, `waitlist:status_change`, `tables:updated`, `demo:reset`).
+- [x] Implement client heartbeat/keep-alive mechanism.
 
-### Phase 4: Guest Mobile Status Portal
-- [ ] Create mobile-first view at `/status/[token]`.
-- [ ] Display real-time position badge (e.g., *"3rd in line"*).
-- [ ] Display dynamic estimated wait time and live progress bar.
-- [ ] Render prominent alert banner when status changes to `NOTIFIED` (*"Your table is ready! Please see the host"*).
-- [ ] Provide "Leave Waitlist" confirmation modal.
+### Phase 4: Frontend & Backend Integration
+- [x] Host Dashboard UI (Implemented in `frontent/`).
+- [x] Guest Mobile Status Portal (Implemented in `frontent/`).
+- [x] Connect `frontent/src/services/api.ts` to the live backend server (`http://localhost:8000/api/v1`).
+- [x] Connect SSE subscription in `frontent/` for live multi-client updates.
 
-### Phase 5: Real-time Communication Layer
-- [ ] Implement Server-Sent Events (SSE) or WebSockets channel for dashboard updates.
-- [ ] Broadcast events when parties are added, status is updated, or tables are freed.
-- [ ] Implement live reconnection and fallback polling on client side.
-
-### Phase 6: Testing, Polish & Verification
-- [ ] Unit tests for queue position recalculation and status state machine transitions.
-- [ ] Integration tests for Waitlist API endpoints.
-- [ ] End-to-end user flow testing (Host adds party $\rightarrow$ Guest watches status $\rightarrow$ Host notifies $\rightarrow$ Guest sees alert $\rightarrow$ Host seats).
-- [ ] Mobile responsive styling audit on iOS/Android viewports.
+### Phase 5: Verification & Automated Testing
+- [x] Write automated integration tests for all API endpoints and status transition edge cases (`backend/tests/test_api.py`).
+- [x] Run end-to-end smoke test (Add Party $\rightarrow$ Watch Guest Status $\rightarrow$ Notify $\rightarrow$ Seat $\rightarrow$ Verify Table Occupancy).
