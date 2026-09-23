@@ -24,3 +24,8 @@ media/proofs/*
 .idea/
 .DS_Store
 *.swp
+
+# Node & Playwright
+node_modules/
+test-results/
+playwright-report/

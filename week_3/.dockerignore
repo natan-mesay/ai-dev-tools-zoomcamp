@@ -1,0 +1,24 @@
+# Version control
+.git
+.gitignore
+
+# Python artifacts
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.pytest_cache
+**/.venv
+*.db
+maitreq.db
+backend/maitreq.db
+
+# Node artifacts
+**/node_modules
+frontent/dist
+.npm
+
+# IDE and OS files
+.DS_Store
+.vscode
+.idea
