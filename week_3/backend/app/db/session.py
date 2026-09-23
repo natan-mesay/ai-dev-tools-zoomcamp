@@ -25,10 +25,35 @@ def create_engine_for_url(db_url: str) -> AsyncEngine:
     elif db_url.startswith("sqlite://") and not db_url.startswith("sqlite+aiosqlite://"):
         db_url = db_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
 
+    # Clean libpq query parameters (e.g. sslmode, channel_binding) for asyncpg compatibility
+    if db_url.startswith("postgresql+asyncpg://") and "?" in db_url:
+        from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+        parsed = urlparse(db_url)
+        qs = parse_qs(parsed.query)
+
+        if "sslmode" in qs:
+            sslmode = qs.pop("sslmode")[0]
+            if sslmode in ("require", "verify-ca", "verify-full"):
+                connect_args["ssl"] = "require"
+        qs.pop("channel_binding", None)
+        qs.pop("gssencmode", None)
+
+        new_query = urlencode(qs, doseq=True)
+        db_url = urlunparse((
+            parsed.scheme,
+            parsed.netloc,
+            parsed.path,
+            parsed.params,
+            new_query,
+            parsed.fragment
+        ))
+
     if db_url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
         if ":memory:" in db_url:
             engine_kwargs["poolclass"] = StaticPool
+
+    if connect_args:
         engine_kwargs["connect_args"] = connect_args
 
     engine = create_async_engine(db_url, **engine_kwargs)
