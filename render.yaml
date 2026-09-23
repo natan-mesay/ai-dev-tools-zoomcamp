@@ -1,0 +1,50 @@
+# Render Blueprint for MaitreQ (Separate Frontend, Backend, and PostgreSQL)
+# https://render.com/docs/blueprint-spec
+
+services:
+  # ----------------------------------------------------------------------------
+  # Backend Web Service (FastAPI + SQLAlchemy + asyncpg)
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: maitreq-backend
+    runtime: python
+    rootDir: week_3/backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    healthCheckPath: /api/v1/restaurant
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: maitreq-db
+          property: connectionString
+      - key: DB_ECHO
+        value: "false"
+      - key: CORS_ORIGINS
+        value: "*"
+
+  # ----------------------------------------------------------------------------
+  # Frontend Static Site (React 19 + Vite + Tailwind CSS)
+  # ----------------------------------------------------------------------------
+  - type: staticSite
+    name: maitreq-frontend
+    rootDir: week_3/frontent
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        # Replace with your deployed backend URL: https://maitreq-backend.onrender.com/api/v1
+        value: https://maitreq-backend.onrender.com/api/v1
+
+# ------------------------------------------------------------------------------
+# Managed PostgreSQL Database
+# ------------------------------------------------------------------------------
+databases:
+  - name: maitreq-db
+    databaseName: maitreq
+    user: maitreq
+    plan: free

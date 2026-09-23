@@ -13,6 +13,12 @@ def create_engine_for_url(db_url: str) -> AsyncEngine:
     connect_args = {}
     engine_kwargs = {"echo": settings.DB_ECHO, "future": True}
 
+    # Automatically adapt Render and standard PostgreSQL URLs to asyncpg
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+asyncpg://"):
+        db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
     if db_url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
         if ":memory:" in db_url:
