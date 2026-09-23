@@ -147,23 +147,54 @@ jobs:
           docker compose down -v
 
   # ============================================================================
-  # 3. Deploy to AWS using GitHub OIDC Role
+  # 3. Deploy to Render / AWS & Validate Health Endpoint
   # ============================================================================
 
-  deploy-aws:
-    name: Deploy to AWS (OIDC) & Validate Health
+  deploy:
+    name: Deploy to Render / AWS & Validate Health
     needs: [integration-and-e2e]
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.skip_deploy))
     runs-on: ubuntu-latest
     permissions:
-      id-token: write  # Crucial for AWS OIDC authentication
+      id-token: write  # For AWS OIDC authentication if used
       contents: read
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # ------------------------------------------------------------------------
+      # Render Deployment (Deploy Hooks or Render API)
+      # ------------------------------------------------------------------------
+      - name: Trigger Render Backend Deployment
+        if: "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK != '' || secrets.RENDER_DEPLOY_HOOK != '' }}"
+        run: |
+          HOOK_URL="${{ secrets.RENDER_BACKEND_DEPLOY_HOOK || secrets.RENDER_DEPLOY_HOOK }}"
+          echo "Triggering Render Backend Deployment via Deploy Hook..."
+          curl -f -X POST "$HOOK_URL"
+          echo "Render Backend deployment triggered successfully!"
+
+      - name: Trigger Render Frontend Deployment
+        if: "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK != '' }}"
+        run: |
+          echo "Triggering Render Frontend Deployment via Deploy Hook..."
+          curl -f -X POST "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}"
+          echo "Render Frontend deployment triggered successfully!"
+
+      - name: Trigger Render via API Key (Alternative)
+        if: "${{ secrets.RENDER_API_KEY != '' && secrets.RENDER_SERVICE_ID != '' }}"
+        run: |
+          echo "Triggering Render deploy via API Key for service ${{ secrets.RENDER_SERVICE_ID }}..."
+          curl -f -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Accept: application/json"
+          echo "Render API deployment triggered successfully!"
+
+      # ------------------------------------------------------------------------
+      # AWS Deployment via GitHub OIDC (If AWS_ROLE_ARN is configured)
+      # ------------------------------------------------------------------------
       - name: Configure AWS Credentials via OIDC
+        if: "${{ secrets.AWS_ROLE_ARN != '' }}"
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
@@ -173,11 +204,11 @@ jobs:
 
       - name: Log in to Amazon ECR (if configured)
         id: login-ecr
-        if: "${{ secrets.AWS_ECR_REPOSITORY != '' }}"
+        if: "${{ secrets.AWS_ROLE_ARN != '' && secrets.AWS_ECR_REPOSITORY != '' }}"
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, tag, and push Docker image to Amazon ECR
-        if: "${{ secrets.AWS_ECR_REPOSITORY != '' }}"
+        if: "${{ secrets.AWS_ROLE_ARN != '' && secrets.AWS_ECR_REPOSITORY != '' }}"
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPOSITORY }}
@@ -189,6 +220,7 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Trigger AWS Service Deployment (ECS / App Runner)
+        if: "${{ secrets.AWS_ROLE_ARN != '' }}"
         env:
           ECS_CLUSTER: ${{ secrets.AWS_ECS_CLUSTER }}
           ECS_SERVICE: ${{ secrets.AWS_ECS_SERVICE }}
@@ -203,8 +235,6 @@ jobs:
             echo "Deploying to AWS App Runner ($APP_RUNNER_ARN)..."
             OPERATION_ID=$(aws apprunner start-deployment --service-arn "$APP_RUNNER_ARN" --query 'OperationId' --output text)
             echo "App Runner deployment triggered with operation ID: $OPERATION_ID"
-          else
-            echo "Custom AWS deployment steps can be placed here or executed via AWS CLI."
           fi
 
       # ========================================================================
