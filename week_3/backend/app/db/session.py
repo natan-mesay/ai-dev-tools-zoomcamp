@@ -18,6 +18,12 @@ def create_engine_for_url(db_url: str) -> AsyncEngine:
         db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
     elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+asyncpg://"):
         db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif db_url.startswith("sqlitecloud://"):
+        import logging
+        logging.warning("SQLite Cloud does not support Async SQLAlchemy 2.0. Falling back to local SQLite database.")
+        db_url = "sqlite+aiosqlite:///./maitreq.db"
+    elif db_url.startswith("sqlite://") and not db_url.startswith("sqlite+aiosqlite://"):
+        db_url = db_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
 
     if db_url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
