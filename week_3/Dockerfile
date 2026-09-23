@@ -8,11 +8,11 @@ FROM node:22-alpine AS frontend-builder
 WORKDIR /app/frontend
 
 # Install dependencies using package-lock for reproducible builds
-COPY frontent/package*.json ./
+COPY week_3/frontent/package*.json ./
 RUN npm ci
 
 # Copy frontend source files
-COPY frontent/ ./
+COPY week_3/frontent/ ./
 
 # Build production bundle with relative API URL for unified serving
 ENV VITE_API_URL=/api/v1
@@ -40,11 +40,11 @@ WORKDIR /app
 RUN useradd -m -u 1000 appuser
 
 # Install Python backend dependencies using uv lockfile
-COPY backend/pyproject.toml backend/uv.lock backend/README.md ./
+COPY week_3/backend/pyproject.toml week_3/backend/uv.lock week_3/backend/README.md ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 # Copy application source code
-COPY backend/app ./app
+COPY week_3/backend/app ./app
 RUN uv sync --frozen --no-dev
 
 # Copy compiled frontend assets from Stage 1 into the static directory

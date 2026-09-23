@@ -56,8 +56,8 @@ describe('Frontend API Client Unit Tests', () => {
       json: async () => ({ error: 'Party size must be greater than 0' }),
     } as any);
 
-    await expect(api.waitlist.create({ guest_name: 'Alex', party_size: 0 })).rejects.toThrow(
-      'Party size must be greater than 0'
-    );
+    await expect(
+      api.waitlist.create({ guest_name: 'Alex', phone_number: '+15551234567', party_size: 0 })
+    ).rejects.toThrow('Party size must be greater than 0');
   });
 });

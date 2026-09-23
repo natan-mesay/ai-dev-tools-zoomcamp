@@ -19,8 +19,8 @@ services:
 
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: week_3/Dockerfile
     container_name: maitreq-app
     restart: unless-stopped
     ports:
