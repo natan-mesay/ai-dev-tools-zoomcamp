@@ -87,4 +87,11 @@ flowchart TD
   - Backend database transactions against PostgreSQL (CRUD, table assignment, constraints).
   - Real-time Server-Sent Events (SSE) stream connectivity.
 
+### Phase 8: E2E Playwright Automation & Configuration Parameterization
+- [x] Multi-session Playwright E2E suite (`e2e/collaborative_session.spec.ts`) testing real-time synchronization between Host and Guest sessions.
+- [x] Streamlined Make targets (`make e2e`, `make e2e-headed`, `make test-integration`) for one-command test execution.
+- [x] Comprehensive `.env.example` template with full configuration documentation.
+- [x] Parameterized `docker-compose.yaml` to dynamically read `.env` with fallback defaults.
+
+
 

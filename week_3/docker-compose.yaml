@@ -4,15 +4,15 @@ services:
     container_name: maitreq-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: maitreq
-      POSTGRES_USER: maitreq
-      POSTGRES_PASSWORD: maitreq_secret
+      POSTGRES_DB: ${POSTGRES_DB:-maitreq}
+      POSTGRES_USER: ${POSTGRES_USER:-maitreq}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-maitreq_secret}
     ports:
       - "${POSTGRES_PORT:-5434}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U maitreq -d maitreq"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-maitreq} -d ${POSTGRES_DB:-maitreq}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,11 +24,11 @@ services:
     container_name: maitreq-app
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "${PORT:-8000}:8000"
     environment:
-      DATABASE_URL: postgresql+asyncpg://maitreq:maitreq_secret@postgres:5432/maitreq
-      DB_ECHO: "false"
-      STATIC_DIR: /app/static
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://maitreq:maitreq_secret@postgres:5432/maitreq}
+      DB_ECHO: "${DB_ECHO:-false}"
+      STATIC_DIR: ${STATIC_DIR:-/app/static}
     depends_on:
       postgres:
         condition: service_healthy
